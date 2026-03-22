@@ -2,22 +2,22 @@
 
 import { useRouter } from 'next/navigation'
 
-import { User } from '@supabase/supabase-js'
 import { Link2, LogOut, Palette } from 'lucide-react'
 
-import { createClient } from '@/lib/supabase/client'
+import { createPocketBaseClient } from '@/lib/pocketbase/client'
+import { User } from '@/lib/types/user'
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuTrigger
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuSub,
+    DropdownMenuSubContent,
+    DropdownMenuSubTrigger,
+    DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
 
 import { Button } from './ui/button'
@@ -30,10 +30,8 @@ interface UserMenuProps {
 
 export default function UserMenu({ user }: UserMenuProps) {
   const router = useRouter()
-  const userName =
-    user.user_metadata?.full_name || user.user_metadata?.name || 'User'
-  const avatarUrl =
-    user.user_metadata?.avatar_url || user.user_metadata?.picture
+  const userName = user.name || user.user_metadata?.name || user.user_metadata?.full_name || 'User'
+  const avatarUrl = user.avatar || user.user_metadata?.avatar_url || user.user_metadata?.picture
 
   const getInitials = (name: string, email: string | undefined) => {
     if (name && name !== 'User') {
@@ -50,10 +48,18 @@ export default function UserMenu({ user }: UserMenuProps) {
   }
 
   const handleLogout = async () => {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    router.push('/')
-    router.refresh()
+    try {
+      // 使用 PocketBase 登出
+      const pb = await createPocketBaseClient()
+      pb.authStore.clear()
+      router.push('/')
+      router.refresh()
+    } catch (error) {
+      console.error('Logout error:', error)
+      // 即使出错也重定向到首页
+      router.push('/')
+      router.refresh()
+    }
   }
 
   return (

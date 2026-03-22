@@ -2,6 +2,7 @@ import { createPocketBaseClient } from '@/lib/pocketbase/client'
 import { perfLog } from '@/lib/utils/perf-logging'
 import { incrementAuthCallCount } from '@/lib/utils/perf-tracking'
 
+// 兼容 Supabase User 接口的 PocketBase 用户类型
 export interface PocketBaseUser {
   id: string
   email: string
@@ -10,6 +11,11 @@ export interface PocketBaseUser {
   created: string
   updated: string
   verified: boolean
+  // Supabase 兼容字段
+  app_metadata?: Record<string, any>
+  user_metadata?: Record<string, any>
+  aud?: string
+  created_at?: string
 }
 
 export async function getCurrentUser(): Promise<PocketBaseUser | null> {

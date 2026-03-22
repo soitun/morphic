@@ -4,8 +4,7 @@
 import React, { useState } from 'react'
 import { usePathname } from 'next/navigation'
 
-import { User } from '@supabase/supabase-js'
-
+import { User } from '@/lib/types/user'
 import { cn } from '@/lib/utils'
 
 import { useSidebar } from '@/components/ui/sidebar'
@@ -13,7 +12,7 @@ import { useSidebar } from '@/components/ui/sidebar'
 import { Button } from './ui/button'
 import { FeedbackModal } from './feedback-modal'
 // import { Button } from './ui/button' // No longer needed directly here for Sign In button
-import GuestMenu from './guest-menu' // Import the new GuestMenu component
+import GuestMenu from './guest-menu'; // Import the new GuestMenu component
 import UserMenu from './user-menu'
 
 interface HeaderProps {

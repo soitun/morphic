@@ -4,7 +4,11 @@ import { db } from '.'
 
 // Type for transaction or database instance
 export type DbInstance = typeof db
-export type TxInstance = Parameters<Parameters<typeof db.transaction>[0]>[0]
+
+// For build time, create a compatible transaction type
+export type TxInstance = DbInstance extends { 
+  transaction: (cb: (tx: infer T) => any) => any 
+} ? T : DbInstance
 
 /**
  * Custom error class for RLS violations
@@ -41,11 +45,11 @@ export async function withRLS<T>(
   callback: (tx: TxInstance) => Promise<T>
 ): Promise<T> {
   try {
-    return await db.transaction(async tx => {
+    return await db.transaction(async (tx: any) => {
       // Set the user ID for this transaction
       // Using SET LOCAL ensures it's only valid for this transaction
       // Use pg_catalog.quote_literal for safe escaping
-      await tx.execute(
+      await (tx as any).execute(
         sql`SELECT set_config('app.current_user_id', ${userId}, true)`
       )
 

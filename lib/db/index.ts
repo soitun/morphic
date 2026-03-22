@@ -10,10 +10,16 @@ import * as schema from './schema'
 const isDevelopment = process.env.NODE_ENV === 'development'
 const isTest = process.env.NODE_ENV === 'test'
 
+// Skip database connection during build if URL is placeholder
+const skipDatabaseForBuild = 
+  process.env.NODE_ENV === 'production' && 
+  process.env.DATABASE_URL === '[YOUR_DATABASE_URL]'
+
 if (
   !process.env.DATABASE_URL &&
   !process.env.DATABASE_RESTRICTED_URL &&
-  !isTest
+  !isTest &&
+  !skipDatabaseForBuild
 ) {
   throw new Error(
     'DATABASE_URL or DATABASE_RESTRICTED_URL environment variable is not set'
@@ -22,10 +28,15 @@ if (
 
 // Connection with connection pooling for server environments
 // Prefer restricted user for application runtime
-const connectionString =
+let connectionString: string | undefined =
   process.env.DATABASE_RESTRICTED_URL ?? // Prefer restricted user
   process.env.DATABASE_URL ??
   (isTest ? 'postgres://user:pass@localhost:5432/testdb' : undefined)
+
+// Skip database connection during build
+if (skipDatabaseForBuild) {
+  connectionString = 'postgres://placeholder:placeholder@localhost:5432/placeholder'
+}
 
 if (!connectionString) {
   throw new Error(
@@ -34,7 +45,7 @@ if (!connectionString) {
 }
 
 // Log which connection is being used (for debugging)
-if (isDevelopment) {
+if (isDevelopment && !skipDatabaseForBuild) {
   console.log(
     '[DB] Using connection:',
     process.env.DATABASE_RESTRICTED_URL
@@ -51,15 +62,59 @@ const sslConfig =
     ? false // Disable SSL entirely for local PostgreSQL
     : { rejectUnauthorized: true } // Enable SSL with verification for cloud DBs
 
-const client = postgres(connectionString, {
-  ssl: sslConfig,
-  prepare: false,
-  max: 20 // Max 20 connections
-})
+// Skip creating actual database connection during build
+let client: any
+let db: any
 
-export const db = drizzle(client, {
-  schema: { ...schema, ...relations }
-})
+if (!skipDatabaseForBuild) {
+  client = postgres(connectionString, {
+    ssl: sslConfig,
+    prepare: false,
+    max: 20 // Max 20 connections
+  })
+
+  db = drizzle(client, {
+    schema: { ...schema, ...relations }
+  })
+} else {
+  // Create mock db for build with proper types
+  const mockTx = {
+    select: () => ({ 
+      from: () => ({ 
+        where: () => ({ 
+          limit: () => Promise.resolve([]) 
+        })
+      }) 
+    }),
+    insert: () => ({ 
+      values: () => ({ 
+        returning: () => Promise.resolve([]) 
+      }) 
+    }),
+    update: () => ({ 
+      set: () => ({ 
+        where: () => ({ 
+          returning: () => Promise.resolve([]) 
+        }) 
+      }) 
+    }),
+    delete: () => ({ 
+      where: () => ({ 
+        returning: () => Promise.resolve([]) 
+      }) 
+    }),
+    execute: () => Promise.resolve({ rows: [] })
+  }
+  
+  db = {
+    ...mockTx,
+    execute: () => Promise.resolve({ rows: [] }),
+    transaction: (callback: any) => callback(mockTx)
+  }
+}
+
+// Export db for other modules
+export { db }
 
 // Helper type for all tables
 export type Schema = typeof schema
@@ -70,9 +125,9 @@ if (process.env.DATABASE_RESTRICTED_URL && !isTest) {
   if (typeof window === 'undefined' && process.env.NODE_ENV !== 'production') {
     ;(async () => {
       try {
-        const result = await db.execute<{ current_user: string }>(
+        const result = await (db as any).execute(
           sql`SELECT current_user`
-        )
+        ) as { current_user: string }[]
         const currentUser = result[0]?.current_user
 
         if (isDevelopment) {

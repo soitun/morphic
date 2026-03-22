@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  morphic:
+    image: ghcr.io/miurla/morphic:latest
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    env_file: .env.local
+    environment:
+      DATABASE_URL: postgresql://morphic:morphic@postgres:5432/morphic
+      DATABASE_SSL_DISABLED: 'true'
+      ENABLE_AUTH: 'true'
+      POCKETBASE_URL: http://pocketbase:8090
+    depends_on:
+      postgres:
+        condition: service_healthy
+      pocketbase:
+        condition: service_started
+
+  pocketbase:
+    image: ghcr.io/pocketbase/pocketbase:latest
+    restart: unless-stopped
+    ports:
+      - '8090:8090'
+    volumes:
+      - pocketbase_data:/pb_data
+      - ./pocketbase-hooks:/pb_hooks
+    environment:
+      - POCKETBASE_URL=http://localhost:8090
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8090/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: morphic
+      POSTGRES_PASSWORD: morphic
+      POSTGRES_DB: morphic
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U morphic']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:alpine
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+
+volumes:
+  pocketbase_data:
+  postgres_data:
+  redis_data:

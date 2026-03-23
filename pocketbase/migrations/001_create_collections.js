@@ -2,14 +2,13 @@
 // Compatible with PocketBase v0.36.x
 
 migrate(
-  db => {
-    const uploads = new Collection({
-      id: 'uploads',
+  app => {
+    const collection = {
       name: 'uploads',
       type: 'base',
       system: false,
       schema: [
-        new SchemaField({
+        {
           name: 'user',
           type: 'relation',
           required: true,
@@ -19,14 +18,14 @@ migrate(
             cascadeDelete: false,
             displayFields: []
           }
-        }),
-        new SchemaField({
+        },
+        {
           name: 'chatId',
           type: 'text',
           required: true,
           options: {}
-        }),
-        new SchemaField({
+        },
+        {
           name: 'file',
           type: 'file',
           required: true,
@@ -42,25 +41,25 @@ migrate(
             thumbs: [],
             previewable: false
           }
-        }),
-        new SchemaField({
+        },
+        {
           name: 'originalName',
           type: 'text',
           required: true,
           options: {}
-        }),
-        new SchemaField({
+        },
+        {
           name: 'mediaType',
           type: 'text',
           required: true,
           options: {}
-        }),
-        new SchemaField({
+        },
+        {
           name: 'size',
           type: 'number',
           required: true,
           options: {}
-        })
+        }
       ],
       indexes: [],
       listRule: '',
@@ -68,50 +67,50 @@ migrate(
       createRule: '',
       updateRule: '',
       deleteRule: ''
+    }
+
+    app.save(collection)
+
+    const users = app.findCollectionByNameOrId('_pb_users_auth_')
+    users.schema.addField({
+      name: 'name',
+      type: 'text',
+      required: false,
+      options: {}
     })
 
-    db.createCollection(uploads)
+    users.schema.addField({
+      name: 'avatar',
+      type: 'file',
+      required: false,
+      options: {
+        maxSelect: 1,
+        maxSize: 1048576,
+        mimeTypes: ['image/jpeg', 'image/png'],
+        thumbs: [],
+        previewable: false
+      }
+    })
 
-    const users = db.collectionById('_pb_users_auth_')
-    users.schema.addField(
-      new SchemaField({
-        name: 'name',
-        type: 'text',
-        required: false,
-        options: {}
-      })
-    )
+    users.schema.addField({
+      name: 'preferences',
+      type: 'json',
+      required: false,
+      options: {}
+    })
 
-    users.schema.addField(
-      new SchemaField({
-        name: 'avatar',
-        type: 'file',
-        required: false,
-        options: {
-          maxSelect: 1,
-          maxSize: 1048576,
-          mimeTypes: ['image/jpeg', 'image/png'],
-          thumbs: [],
-          previewable: false
-        }
-      })
-    )
-
-    users.schema.addField(
-      new SchemaField({
-        name: 'preferences',
-        type: 'json',
-        required: false,
-        options: {}
-      })
-    )
+    app.save(users)
   },
-  db => {
-    db.dropCollection('uploads')
+  app => {
+    const uploads = app.findCollectionByNameOrId('uploads')
+    if (uploads) {
+      app.delete(uploads)
+    }
 
-    const users = db.collectionById('_pb_users_auth_')
+    const users = app.findCollectionByNameOrId('_pb_users_auth_')
     users.schema.removeField('name')
     users.schema.removeField('avatar')
     users.schema.removeField('preferences')
+    app.save(users)
   }
 )

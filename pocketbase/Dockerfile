@@ -5,7 +5,7 @@ FROM alpine:3.19 AS builder
 
 RUN apk add --no-cache wget unzip
 
-ARG POCKETBASE_VERSION=0.26.8
+ARG POCKETBASE_VERSION=0.36.7
 
 WORKDIR /tmp/pocketbase
 

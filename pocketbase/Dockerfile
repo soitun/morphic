@@ -25,7 +25,7 @@ COPY --from=builder /usr/local/bin/pocketbase /usr/local/bin/pocketbase
 RUN mkdir -p /pb_data /pb_hooks /pb_migrations
 
 COPY pocketbase/migrations /pb_migrations
-COPY pocketbase-hooks /pb_hooks
+COPY pocketbase-hooks /pb_hooks 2>/dev/null || true
 
 RUN if [ -d "/pb_migrations" ] && [ "$(ls -A /pb_migrations 2>/dev/null)" ]; then \
         pocketbase migrate --dir /pb_migrations; \

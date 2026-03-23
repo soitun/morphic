@@ -10,13 +10,13 @@ if ! command -v pocketbase &> /dev/null; then
     
     # 下载 PocketBase
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        wget https://github.com/pocketbase/pocketbase/releases/download/v0.26.8/pocketbase_0.26.8_linux_amd64.zip
+        wget https://github.com/pocketbase/pocketbase/releases/download/POCKETBASE_VERSION=0.36.7/pocketbase_0.26.8_linux_amd64.zip
         unzip pocketbase_0.26.8_linux_amd64.zip
     elif [[ "$OSTYPE" == "darwin"* ]]; then
-        wget https://github.com/pocketbase/pocketbase/releases/download/v0.26.8/pocketbase_0.26.8_darwin_amd64.zip
+        wget https://github.com/pocketbase/pocketbase/releases/download/POCKETBASE_VERSION=0.36.7/pocketbase_0.26.8_darwin_amd64.zip
         unzip pocketbase_0.26.8_darwin_amd64.zip
     elif [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "win32" ]]; then
-        wget https://github.com/pocketbase/pocketbase/releases/download/v0.26.8/pocketbase_0.26.8_windows_amd64.zip
+        wget https://github.com/pocketbase/pocketbase/releases/download/POCKETBASE_VERSION=0.36.7/pocketbase_0.26.8_windows_amd64.zip
         unzip pocketbase_0.26.8_windows_amd64.zip
     fi
     

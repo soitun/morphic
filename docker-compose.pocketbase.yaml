@@ -37,14 +37,13 @@ services:
       retries: 5
 
   pocketbase:
-    image: ghcr.io/pocketbase/pocketbase:v0.36.7
+    image: morphic-pocketbase:latest
     restart: unless-stopped
     ports:
       - '8090:8090'
     volumes:
       - pocketbase_data:/pb_data
       - ./pocketbase-hooks:/pb_hooks
-      - ./pocketbase/migrations:/pb_migrations
     environment:
       - POCKETBASE_URL=http://localhost:8090
     healthcheck:

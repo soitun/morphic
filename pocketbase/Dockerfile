@@ -5,7 +5,7 @@ FROM alpine:3.19 AS builder
 
 RUN apk add --no-cache wget unzip
 
-ARG POCKETBASE_VERSION=0.36.7
+ARG POCKETBASE_VERSION=0.26.6
 
 WORKDIR /tmp/pocketbase
 
@@ -18,7 +18,7 @@ FROM alpine:3.19
 
 RUN apk add --no-cache bash ca-certificates wget unzip
 
-ARG POCKETBASE_VERSION=0.36.7
+ARG POCKETBASE_VERSION=0.26.6
 
 RUN wget -q "https://github.com/pocketbase/pocketbase/releases/download/v${POCKETBASE_VERSION}/pocketbase_${POCKETBASE_VERSION}_linux_amd64.zip" && \
     unzip pocketbase_${POCKETBASE_VERSION}_linux_amd64.zip && \

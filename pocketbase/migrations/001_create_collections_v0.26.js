@@ -12,7 +12,7 @@ migrate((db) => {
         type: "relation",
         required: true,
         options: {
-          collectionId: "users",
+          collectionId: "_pb_users_auth_",
           maxSelect: 1
         }
       },
@@ -62,7 +62,7 @@ migrate((db) => {
   db.save(uploads)
 
   // Extend users collection
-  const users = db.collectionById("users")
+  const users = db.collectionByName("_pb_users_auth_")
   
   users.schema.addField({
     name: "name",
@@ -93,7 +93,7 @@ migrate((db) => {
   // Rollback logic
   db.dropCollection("uploads")
   
-  const users = db.collectionById("users")
+  const users = db.collectionByName("_pb_users_auth_")
   users.schema.removeField("name")
   users.schema.removeField("avatar")
   users.schema.removeField("preferences")

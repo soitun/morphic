@@ -103,7 +103,7 @@ export async function signInWithEmail(email: string, password: string) {
   const pb = await createPocketBaseClient()
   
   try {
-    const authData = await pb.collection('_pb_users_auth_').authWithPassword(email, password)
+    const authData = await pb.collection('users').authWithPassword(email, password)
     return authData
   } catch (error) {
     throw new Error('Invalid credentials')
@@ -121,10 +121,10 @@ export async function signUpWithEmail(email: string, password: string, name?: st
       name: name || email.split('@')[0]
     }
     
-    const record = await pb.collection('_pb_users_auth_').create(userData)
+    const record = await pb.collection('users').create(userData)
     
     // 自动登录
-    const authData = await pb.collection('_pb_users_auth_').authWithPassword(email, password)
+    const authData = await pb.collection('users').authWithPassword(email, password)
     return authData
   } catch (error) {
     throw new Error('Failed to create account')

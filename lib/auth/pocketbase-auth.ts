@@ -1,6 +1,7 @@
 import { createPocketBaseClient } from '@/lib/pocketbase/client'
 import { perfLog } from '@/lib/utils/perf-logging'
 import { incrementAuthCallCount } from '@/lib/utils/perf-tracking'
+import { cookies } from 'next/headers'
 
 // 兼容 Supabase User 接口的 PocketBase 用户类型
 export interface PocketBaseUser {
@@ -28,8 +29,40 @@ export async function getCurrentUser(): Promise<PocketBaseUser | null> {
   try {
     const pb = await createPocketBaseClient()
     
-    // 在服务器端，我们需要从请求中获取认证信息
-    // 这里先返回 null，实际实现需要从 cookies/headers 中获取 token
+    // 在服务器端从 cookies 获取认证信息
+    const cookieStore = await cookies()
+    const authCookie = cookieStore.get('pb_auth')
+    
+    if (authCookie?.value) {
+      // 如果有认证 cookie，尝试恢复认证状态
+      try {
+        pb.authStore.loadFromCookie(authCookie.value)
+        
+        if (pb.authStore.isValid && pb.authStore.model) {
+          const model = pb.authStore.model as any
+          return {
+            id: model.id,
+            email: model.email,
+            name: model.name,
+            avatar: model.avatar,
+            created: model.created,
+            updated: model.updated,
+            verified: model.verified,
+            // Supabase 兼容字段
+            app_metadata: model.preferences || {},
+            user_metadata: { 
+              name: model.name,
+              avatar_url: model.avatar 
+            },
+            aud: 'authenticated',
+            created_at: model.created
+          }
+        }
+      } catch (cookieError) {
+        console.warn('Failed to restore auth from cookie:', cookieError)
+      }
+    }
+    
     return null
   } catch (error) {
     console.error('Failed to get current user:', error)

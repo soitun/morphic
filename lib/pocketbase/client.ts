@@ -20,10 +20,39 @@ export function getPocketBase(): PocketBase {
   return _pb
 }
 
-export async function createPocketBaseClient() {
+export async function createPocketBaseClient(): Promise<PocketBase> {
   const pb = getPocketBase()
   
-  // 在服务器端，我们不需要认证状态
-  // 客户端认证将通过 cookies 或 headers 处理
+  // 在客户端环境中，尝试从 cookie 恢复认证状态
+  if (typeof window !== 'undefined') {
+    try {
+      const authCookie = document.cookie
+        .split('; ')
+        .find(cookie => cookie.trim().startsWith('pb_auth='))
+        ?.split('=')[1]
+      
+      if (authCookie) {
+        pb.authStore.loadFromCookie(authCookie)
+      }
+    } catch (error) {
+      console.warn('Failed to restore auth from cookie:', error)
+    }
+  }
+  
   return pb
+}
+
+export function saveAuthCookie(token: string) {
+  if (typeof window !== 'undefined') {
+    const expires = new Date()
+    expires.setTime(expires.getTime() + 30 * 24 * 60 * 60 * 1000) // 30 days
+    
+    document.cookie = `pb_auth=${token}; expires=${expires.toUTCString()}; path=/; samesite=lax; ${process.env.NODE_ENV === 'production' ? 'secure;' : ''}`
+  }
+}
+
+export function clearAuthCookie() {
+  if (typeof window !== 'undefined') {
+    document.cookie = 'pb_auth=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
+  }
 }

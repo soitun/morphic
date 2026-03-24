@@ -1,8 +1,8 @@
 # PocketBase 集成指南
 
-本指南说明如何将 Morphic 从 Supabase + Cloudflare R2 迁移到 PocketBase。
+本指南说明如何将 Morphic 从 Supabase + Cloudflare R2 迁移到 PocketBase v0.36.7。
 
-## 🎯 迁移概述
+## 迁移概述
 
 ### 替换的组件
 - **认证系统**：Supabase Auth → PocketBase Auth
@@ -14,7 +14,7 @@
 - **缓存系统**：Redis
 - **AI 集成**：OpenAI、Anthropic 等
 
-## 🚀 快速开始
+## 快速开始
 
 ### 1. 使用 Docker Compose（推荐）
 
@@ -29,12 +29,15 @@ docker compose -f docker-compose.pocketbase.yaml up -d
 ### 2. 手动启动 PocketBase
 
 ```bash
-# 下载并启动 PocketBase
+# 下载并启动 PocketBase v0.36.7
 chmod +x scripts/start-pocketbase.sh
 ./scripts/start-pocketbase.sh
+
+# 启动 Morphic
+bun dev
 ```
 
-## 📋 环境变量配置
+## 环境变量配置
 
 ### 必需变量
 
@@ -65,17 +68,27 @@ POSTGRES_PASSWORD=morphic
 POSTGRES_DB=morphic
 ```
 
-## 🏗️ 架构变更
+### PocketBase v0.36.7 特定配置
+
+```bash
+# PocketBase 管理员账户（首次运行设置）
+POCKETBASE_ADMIN_EMAIL=admin@example.com
+POCKETBASE_ADMIN_PASSWORD=admin123456
+```
+
+## 架构变更
 
 ### 认证流程
 
 #### Supabase（原）
+
 ```typescript
 const supabase = await createClient()
 const { data } = await supabase.auth.getUser()
 ```
 
-#### PocketBase（新）
+#### PocketBase v0.36.7（新）
+
 ```typescript
 import { getCurrentUser } from '@/lib/auth/pocketbase-auth'
 
@@ -85,23 +98,26 @@ const user = await getCurrentUser()
 ### 文件上传
 
 #### Cloudflare R2（原）
+
 ```typescript
 const r2Client = getR2Client()
 await r2Client.send(new PutObjectCommand({...}))
 ```
 
-#### PocketBase（新）
+#### PocketBase v0.36.7（新）
+
 ```typescript
 import { uploadFileToPocketBase } from '@/lib/storage/pocketbase-client'
 
 const result = await uploadFileToPocketBase(file, userId, chatId)
 ```
 
-## 🗄️ 数据库结构
+## 数据库结构
 
-### PocketBase 集合
+### PocketBase v0.36.7 集合
 
 #### Users 集合（扩展）
+
 - `id`：用户 ID
 - `email`：邮箱
 - `name`：显示名称
@@ -112,6 +128,7 @@ const result = await uploadFileToPocketBase(file, userId, chatId)
 - `verified`：邮箱验证状态
 
 #### Uploads 集合
+
 - `id`：上传记录 ID
 - `user`：关联用户（外键）
 - `chatId`：聊天 ID
@@ -122,41 +139,47 @@ const result = await uploadFileToPocketBase(file, userId, chatId)
 - `created`：上传时间
 - `updated`：更新时间
 
-## 🔄 迁移步骤
+## 迁移步骤
 
 ### 阶段 1：基础设施
-1. ✅ 添加 PocketBase 依赖
-2. ✅ 创建 PocketBase 客户端
+
+1. ✅ 添加 PocketBase v0.36.7 依赖
+2. ✅ 创建 PocketBase v0.36.7 客户端
 3. ✅ 配置 Docker Compose
 
 ### 阶段 2：认证系统
-1. ✅ 创建 PocketBase 认证模块
+
+1. ✅ 创建 PocketBase v0.36.7 认证模块
 2. ✅ 更新 layout.tsx
 3. ⏳ 更新认证组件（登录/注册）
 
 ### 阶段 3：文件上传
-1. ✅ 创建 PocketBase 文件存储
+
+1. ✅ 创建 PocketBase v0.36.7 文件存储
 2. ✅ 更新上传 API
 3. ⏳ 更新前端上传组件
 
 ### 阶段 4：测试和优化
+
 1. ⏳ 单元测试
 2. ⏳ 集成测试
 3. ⏳ 性能优化
 
-## 🎛️ 管理后台
+## 管理后台
 
-PocketBase 提供内置管理后台：
+PocketBase v0.36.7 提供内置管理后台：
 
 访问：`http://localhost:8090/_/`
 
 默认管理员账户：
+
 - 邮箱：`admin@example.com`
-- 密码：首次访问时设置
+- 密码：`admin123456`
 
-## 🔧 开发工具
+## 开发工具
 
-### 数据库迁移
+### 数据库迁移（v0.36.7）
+
 ```bash
 # 运行迁移
 ./pocketbase migrate --dir pocketbase/migrations
@@ -166,6 +189,7 @@ PocketBase 提供内置管理后台：
 ```
 
 ### API 测试
+
 ```bash
 # 健康检查
 curl http://localhost:8090/api/health
@@ -174,9 +198,9 @@ curl http://localhost:8090/api/health
 curl http://localhost:8090/api/collections
 ```
 
-## 📊 性能对比
+## 性能对比
 
-| 指标 | Supabase + R2 | PocketBase |
+| 指标 | Supabase + R2 | PocketBase v0.36.7 |
 |------|---------------|-----------|
 | **启动时间** | ~30s | ~5s |
 | **内存占用** | ~200MB | ~50MB |
@@ -184,56 +208,100 @@ curl http://localhost:8090/api/collections
 | **存储成本** | $0.15/GB | 免费 |
 | **API 调用** | 按量计费 | 免费 |
 
-## 🚨 注意事项
+## 注意事项
+
+### PocketBase v0.36.7 特定变更
+
+#### 迁移语法更新
+
+- 使用 `Collection` 和 `SchemaField` 类
+- 替换了旧的配置对象语法
+- 更新了文件字段选项格式
+
+#### 新的文件选项
+
+```javascript
+// v0.36.7 文件字段配置
+{
+  name: "file",
+  type: "file",
+  required: true,
+  options: {
+    maxSelect: 1,
+    maxSize: 5242880, // 5MB
+    allowedTypes: ["image/jpeg", "image/png", "application/pdf", "text/plain"]
+  }
+}
+```
 
 ### 安全性
+
 - PocketBase 默认允许匿名访问，需要配置权限规则
 - 建议在生产环境中启用 HTTPS
 - 定期备份数据库
 
 ### 限制
+
 - 单文件上传限制：5MB
 - 支持的文件类型：JPEG、PNG、PDF、TXT
 - 并发连接数：默认 1000
 
 ### 扩展性
+
 - 可以配置 PostgreSQL 作为后端数据库
 - 支持水平扩展（多个实例）
 - 可以集成 CDN 进行文件加速
 
-## 🎯 故障排除
+## 故障排除
 
 ### 常见问题
 
-#### 1. 无法连接 PocketBase
+#### 1. 无法连接 PocketBase v0.36.7
+
 ```bash
 # 检查服务状态
 curl http://localhost:8090/api/health
 
 # 检查端口占用
 netstat -tulpn | grep 8090
+
+# 检查版本兼容性
+./pocketbase version
 ```
 
-#### 2. 文件上传失败
+#### 2. 迁移失败
+
+```bash
+# 检查迁移语法
+./pocketbase migrate --dir pocketbase/migrations --dry-run
+
+# 查看详细错误
+./pocketbase migrate --dir pocketbase/migrations --debug
+```
+
+#### 3. 文件上传失败
+
 - 检查文件大小是否超过 5MB
 - 确认文件类型是否受支持
 - 验证用户权限
 
-#### 3. 认证问题
+#### 4. 认证问题
+
 - 检查 `ENABLE_AUTH` 环境变量
 - 验证 PocketBase URL 配置
 - 查看浏览器控制台错误信息
 
 ### 日志调试
+
 ```bash
-# 查看 PocketBase 日志
+# 查看 PocketBase v0.36.7 日志
 docker compose -f docker-compose.pocketbase.yaml logs pocketbase
 
 # 查看 Morphic 日志
 docker compose -f docker-compose.pocketbase.yaml logs morphic
 ```
 
-## 🎉 迁移完成
+## 迁移完成
 
 迁移完成后，您将拥有：
 
@@ -242,10 +310,13 @@ docker compose -f docker-compose.pocketbase.yaml logs morphic
 - ✅ 更低的运营成本
 - ✅ 完全的数据控制权
 - ✅ 简化的部署流程
+- ✅ PocketBase v0.36.7 的最新功能和安全性
 
-## 📞 支持
+## 支持
 
 如需帮助，请参考：
-- [PocketBase 官方文档](https://pocketbase.io/docs/)
+
+- [PocketBase v0.36.7 官方文档](https://pocketbase.io/docs/)
 - [Morphic 项目仓库](https://github.com/miurla/morphic)
 - [问题反馈](https://github.com/miurla/morphic/issues)
+- [PocketBase v0.36.7 发布说明](https://github.com/pocketbase/pocketbase/releases/tag/v0.36.7)
